@@ -40,3 +40,6 @@
 [submodule "T4AITensorCompat.jl"]
 	path = T4AITensorCompat.jl
 	url = git@github.com:tensor4all/T4AITensorCompat.jl.git
+[submodule "PartitionedMPSs.jl"]
+	path = PartitionedMPSs.jl
+	url = git@github.com:tensor4all/PartitionedMPSs.jl.git
