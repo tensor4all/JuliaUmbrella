@@ -25,3 +25,9 @@
 [submodule "Quantics.jl"]
 	path = Quantics.jl
 	url = git@github.com:tensor4all/Quantics.jl.git
+[submodule "T4ARegistry"]
+	path = T4ARegistry
+	url = git@github.com:tensor4all/T4ARegistry.git
+[submodule "T4ARegistrator.jl"]
+	path = T4ARegistrator.jl
+	url = git@github.com:tensor4all/T4ARegistrator.jl.git
