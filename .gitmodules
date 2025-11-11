@@ -43,3 +43,6 @@
 [submodule "PartitionedMPSs.jl"]
 	path = PartitionedMPSs.jl
 	url = git@github.com:tensor4all/PartitionedMPSs.jl.git
+[submodule "T4APartitionedMPSs.jl"]
+	path = T4APartitionedMPSs.jl
+	url = https://github.com/tensor4all/T4APartitionedMPSs.jl
