@@ -50,3 +50,7 @@
 	url = git@github.com:tensor4all/T4AQuantics.jl.git
 	path = T4AQuantics.jl
 	branch = develop
+[submodule "T4ATCIAlgorithms.jl"]
+	path = T4ATCIAlgorithms.jl
+	url = https://github.com/tensor4all/T4ATCIAlgorithms.jl
+	branch = develop
