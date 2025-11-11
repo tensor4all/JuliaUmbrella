@@ -46,3 +46,7 @@
 [submodule "T4APartitionedMPSs.jl"]
 	path = T4APartitionedMPSs.jl
 	url = https://github.com/tensor4all/T4APartitionedMPSs.jl
+[submodule "T4AQuantics.jl"]
+	url = git@github.com:tensor4all/T4AQuantics.jl.git
+	path = T4AQuantics.jl
+	branch = develop
