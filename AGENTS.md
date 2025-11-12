@@ -12,9 +12,35 @@
 
 - Run tests for a specific package by navigating to its directory and running `julia --project=. -e 'using Pkg; Pkg.test()'` or `julia --project=. test/runtests.jl`
 
+- **When running tests, always redirect stdout and stderr to files and use tee for real-time output**: **Always save test output to files** - this is critical because test output contains detailed error messages, stack traces, and diagnostic information that you'll need for debugging. Without saving to files, you would need to run tests twice: once to see what happened, and again to capture the details. Using `tee` allows you to see progress in real-time while simultaneously saving everything to files. Example:
+  ```bash
+  julia --project=. test/runtests.jl 2>&1 | tee test_output.log
+  ```
+  Or to separate stdout and stderr while still seeing both in real-time:
+  ```bash
+  julia --project=. test/runtests.jl > >(tee test_stdout.log) 2> >(tee test_stderr.log >&2)
+  ```
+  **Important**: Always save test output to files. The saved logs are essential for debugging failures, understanding test behavior, and reviewing detailed error messages without re-running tests.
+
 - For debugging specific tests, it's more efficient to run only the relevant test file. For packages using `include()` statements in `runtests.jl` (like TensorCrossInterpolation.jl), comment out unnecessary includes and run only the test file you're debugging
 
 - Some libraries use ReTestItems as their test framework (e.g., Quantics.jl, QuanticsGrids.jl, TreeTCI.jl, SimpleTensorTrains.jl). However, ReTestItems has compatibility issues with libraries that use Distributed for parallel computation, so those libraries use the standard Test.jl framework instead
+
+- **For ReTestItems packages, you can run individual test files**: ReTestItems supports running specific test files by passing file paths to `runtests()`. This is useful for debugging specific tests without running the entire test suite. Examples:
+  ```bash
+  # Run a specific test file
+  julia --project=. -e "using ReTestItems; runtests(\"test/binaryop_tests.jl\")"
+  
+  # Run multiple specific test files
+  julia --project=. -e "using ReTestItems; runtests(\"test/binaryop_tests.jl\", \"test/mul_tests.jl\")"
+  
+  # Run with specific options (e.g., single worker for debugging)
+  julia --project=. -e "using ReTestItems; runtests(\"test/binaryop_tests.jl\"; nworkers=1)"
+  ```
+  Note: The file paths should be relative to the package root directory. Always redirect output to files when debugging:
+  ```bash
+  julia --project=. -e "using ReTestItems; runtests(\"test/binaryop_tests.jl\")" 2>&1 | tee test_binaryop.log
+  ```
 
 - If a package has a `.JuliaFormatter.toml` file, follow its formatting rules. Otherwise, follow standard Julia style guidelines
 
