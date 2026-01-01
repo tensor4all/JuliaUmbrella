@@ -18,6 +18,13 @@
   ```
   **Important**: Always save test output to files. The saved logs are essential for debugging failures, understanding test behavior, and reviewing detailed error messages without re-running tests.
 
+- **Handling Project.toml changes during testing**: If `Pkg.add` or similar operations during testing modify `Project.toml`, **always review the changes carefully** before committing:
+  - First, use `git diff Project.toml` to see exactly what was added or changed
+  - **Never** use `git checkout Project.toml` or `git checkout Manifest.toml` to blindly revert changes
+  - Understand the diff, then manually remove only the unnecessary parts
+  - **Never commit changes that promote test dependencies or weak dependencies to strong dependencies** - this is strictly forbidden. Test dependencies should remain in `[compat]` or `[extras]` sections, and weak dependencies should not be moved to `[deps]`
+  - **Common issue**: Tools like Aqua.jl, JET.jl, etc. are often accidentally added to `Project.toml` during testing. However, when using `Pkg.test()`, these test tools are automatically available as test dependencies and should **not** be added to `[deps]`. If they appear in `Project.toml` after testing, remove them manually.
+
 - Some libraries use ReTestItems as their test framework (e.g., Quantics.jl, QuanticsGrids.jl, TreeTCI.jl, SimpleTensorTrains.jl). However, ReTestItems has compatibility issues with libraries that use Distributed for parallel computation, so those libraries use the standard Test.jl framework instead
 
 - **For ReTestItems packages, you can run individual test files**: ReTestItems supports running specific test files by passing file paths to `runtests()`. This is useful for debugging specific tests without running the entire test suite. Examples:
