@@ -28,7 +28,13 @@
   julia --project=. -e "using ReTestItems; runtests(\"test/specific_tests.jl\")" 2>&1 | tee test_specific.log
 
   # Filter by test name (regex supported)
-  julia --project=. -e "using ReTestItems; runtests(\"test/\"; name=\"test_name\")" 2>&1 | tee test_specific.log
+  julia --project=. -e "using ReTestItems; runtests(\"test/\"; name=r\"^pattern\")" 2>&1 | tee test_specific.log
+
+  # Filter by tag
+  julia --project=. -e "using ReTestItems; runtests(\"test/\"; tags=:tagname)" 2>&1 | tee test_specific.log
+
+  # Combine name and tags filters
+  julia --project=. -e "using ReTestItems; runtests(\"test/\"; tags=:regression, name=r\"^issue\")" 2>&1 | tee test_specific.log
   ```
 
   For **standard Test.jl packages** (check if `test/runtests.jl` uses `include`):
