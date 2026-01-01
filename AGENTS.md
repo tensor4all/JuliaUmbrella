@@ -102,26 +102,13 @@
 
 - Some libraries are already registered in the official Julia registry. To register a new version, comment `@JuliaRegistrator register` in the library's issue, and the bot will create a PR to the official registry
 
-- **Using `[sources]` for local development (strongly recommended for T4A packages)**: For T4A packages that depend on other T4A packages, it is strongly recommended to add a `[sources]` section in Project.toml pointing to local paths. This enables seamless local development across interdependent packages.
+- **Using `[sources]` for local development**: For T4A packages that depend on other T4A packages, add a `[sources]` section in Project.toml pointing to local paths during development. This enables seamless local development across interdependent packages.
   ```toml
   [sources]
   T4ATensorTrain = {path = "../T4ATensorTrain.jl"}
-  TensorCrossInterpolation = {path = "../TensorCrossInterpolation.jl"}
+  T4AMatrixCI = {path = "../T4AMatrixCI.jl"}
   ```
-  **Benefits**:
-  - When local paths exist (e.g., in the umbrella repository), Julia uses the local versions automatically
-  - No need to add/remove `[sources]` entries during development workflows
-  - Makes cross-package development and testing much smoother
-
-- **Using `[sources]` in `docs/Project.toml`**: For documentation builds, it is recommended to add a `[sources]` entry in `docs/Project.toml` pointing to the parent directory. This ensures that the documentation uses the local development version of the package rather than a registered version.
-  ```toml
-  [sources]
-  PackageName = {path = ".."}
-  ```
-  **Benefits**:
-  - Documentation builds use the latest local changes automatically
-  - No need to register a new version just to test documentation changes
-  - Documentation builds should use the local checkout (for example, `path = ".."`), so avoid committing docs setups that point to non-existent local paths
+  **Important**: `[sources]` entries are for local development only. **Always remove `[sources]` from Project.toml before committing.** The `[sources]` section should never be pushed to the repository.
 
 ---
 
