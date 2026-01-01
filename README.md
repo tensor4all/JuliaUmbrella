@@ -31,7 +31,7 @@ See [AGENTS.md](AGENTS.md) for development guidelines and conventions when worki
 Key points:
 - All source code and documentation must be in English
 - Each subdirectory is an independent Julia package with its own `Project.toml`, `src/`, `test/`, and `docs/` directories
-- When updating multiple interdependent packages, use `[sources]` entries in Project.toml for local development
+- When updating multiple interdependent packages, use `[sources]` entries in Project.toml for local development (see below)
 - Never push directly to main branch - all changes via pull requests
 - Always save test output to files when debugging
 
@@ -55,9 +55,109 @@ TensorCrossInterpolation = {path = "../TensorCrossInterpolation.jl"}
 - No need to add/remove `[sources]` entries during development workflows
 - Makes cross-package development and testing much smoother
 
+### Updating Multiple Interdependent Packages
+
+When you need to update many Julia packages that depend on each other (for example, after bumping an upstream package version), it is best to update and verify everything locally before pushing changes upstream.
+
+(a) Ensure `[sources]` entries in each package's `Project.toml` point to local paths (these should not be committed when pushing to remote).
+
+(b) Update all packages in dependency order. Commit changes to local working branches but do not push yet. Include version bumps in these commits.
+
+(c) Verify that all packages pass tests and documentation builds locally.
+
+(d) Starting from the most upstream package, update its version number in `Project.toml` and those of its downstream packages, push the branch (you do not have to rerun tests locally), create a PR, and merge after CI passes. After each merge, register the new version to T4ARegistry using `T4ARegistrator.jl`. Then proceed to the next downstream package.
+
+**If a problem occurs during step (d)**: If any package fails CI or encounters issues during this phase, go back to step (a) for that package and all its downstream dependencies. Fix the issue locally and verify all affected packages pass tests before attempting to push again. Always strive to maintain local consistency before pushing to remote.
+
 ## Creating New Packages
 
 To create a new package following tensor4all conventions, use [T4ATemplate.jl](https://github.com/tensor4all/T4ATemplate.jl).
+
+### Installation
+
+```bash
+cd T4ATemplate.jl
+julia --project=. -e 'using Pkg; Pkg.instantiate()'
+```
+
+### Basic Usage
+
+Create a new package named `MyPkg.jl`:
+
+```bash
+julia --project=. generate.jl MyPkg.jl
+```
+
+Or using the module directly:
+
+```julia
+julia> using T4ATemplate
+julia> T4ATemplate.generate("MyPkg.jl")
+```
+
+### Advanced Options
+
+Create a package with TensorCrossInterpolation as a dependency:
+
+```bash
+julia --project=. generate.jl MyPkg.jl --include-tci
+```
+
+Specify a different GitHub user/organization:
+
+```bash
+julia --project=. generate.jl MyPkg.jl --user myusername
+```
+
+### Generated Package Features
+
+The template generates a package with:
+- Test.jl-based tests with Aqua and JET code quality checks
+- Documenter.jl documentation scaffold
+- GitHub Actions CI with multiple Julia versions (1.9, LTS, latest)
+- CompatHelper and TagBot automation
+- JuliaFormatter configuration (SciML style)
+- AGENTS.md with development guidelines
+
+### Post-Creation Steps
+
+1. **Create GitHub repository**:
+   ```bash
+   gh repo create tensor4all/MyPkg.jl --public --description "Julia package for tensor4all" --clone=false
+   ```
+
+2. **Push to GitHub**:
+   ```bash
+   cd MyPkg.jl
+   git push -u origin main
+   ```
+
+3. **Add to JuliaUmbrella** (if using umbrella repository):
+   ```bash
+   cd /path/to/JuliaUmbrella
+   git submodule add git@github.com:tensor4all/MyPkg.jl.git
+   git commit -m "Add MyPkg.jl as submodule"
+   git push
+   ```
+
+4. **Enable GitHub Pages** for documentation (Settings → Pages)
+
+5. **Set up DOCUMENTER_KEY** (optional but recommended) for automatic documentation deployment
+
+For more details, see the [T4ATemplate.jl README](https://github.com/tensor4all/T4ATemplate.jl).
+
+## Package Registration with T4ARegistry
+
+Most tensor4all packages are registered in [T4ARegistry](https://github.com/tensor4all/T4ARegistry), a custom Julia registry. For detailed instructions on:
+
+- Adding T4ARegistry to your Julia installation
+- Installing packages from T4ARegistry
+- Registering new packages
+- Updating package versions
+
+See the [T4ARegistrator.jl README](https://github.com/tensor4all/T4ARegistrator.jl).
+
+**Note**: Some packages (e.g., `TensorCrossInterpolation`, `QuanticsGrids`, `QuanticsTCI`) are registered in the official Julia General registry. For these, use JuliaHub to register new versions. See the [T4ARegistry README](https://github.com/tensor4all/T4ARegistry) for details.
 
 ## Related Documentation
 

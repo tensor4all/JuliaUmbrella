@@ -1,3 +1,5 @@
+- Before starting work, read the repository root `README.md` as well as this `AGENTS.md`.
+
 - Use the same language as in past conversations with the user (if it has been Japanese, use Japanese)
 
 - All source code and documentation must be in English
@@ -88,7 +90,7 @@
 
 - When making changes that affect multiple packages, consider the dependency graph and test affected packages accordingly
 
-- The `gh` (GitHub CLI) command is available locally and can be used for GitHub-related operations
+- The `gh` (GitHub CLI) command is available locally and can be used for GitHub-related operations. If `gh` is not available, suggest the user to install it
 
 - **Never push directly to main branch**: All changes must be made through pull requests. Create a branch, commit changes, push the branch, and create a PR. Wait for CI workflows to pass before merging.
 
@@ -121,16 +123,6 @@
   - Documentation builds use the latest local changes automatically
   - No need to register a new version just to test documentation changes
   - When the local path doesn't exist (e.g., in CI or user environments), Julia falls back to the registered version from the registry
-
-- **Updating multiple interdependent Julia packages**: When you need to update many Julia libraries that depend on each other (e.g., after bumping an upstream package version), it is best to update and verify everything locally before pushing to remote.
-  (a) Ensure `[sources]` entries in each package's Project.toml point to local paths (should be removed when committing to remote).
-  (b) Update all packages in dependency order. Commit changes to local working branches but do not push yet. Include version bumps in these commits.
-  (c) Verify that all packages pass tests and documentation builds locally.
-  (d) Starting from the most upstream package, update its version number in Project.toml and those of its downstream packages, push the branch (do not have to rerun tests), create a PR, and merge after CI passes. After each merge, register the new version to T4ARegistry using T4ARegistrator.jl. Then proceed to the next downstream package.
-  
-  **If a problem occurs during step (d)**: If any package fails CI or encounters issues during this phase, go back to step (a) for that package and all its downstream dependencies. Fix the issue locally and verify all affected packages pass tests before attempting to push again. Always strive to maintain local consistency before pushing to remote.
-  
-  **Note**: Do not commit Manifest.toml files. They are auto-generated and will be resolved correctly by CI and other environments based on Project.toml.
 
 ---
 
