@@ -51,7 +51,6 @@ TensorCrossInterpolation = {path = "../TensorCrossInterpolation.jl"}
 
 **Benefits**:
 - When local paths exist (e.g., in the umbrella repository), Julia uses the local versions automatically
-- When local paths don't exist (e.g., in CI or user environments), Julia falls back to the registered versions from the registry
 - No need to add/remove `[sources]` entries during development workflows
 - Makes cross-package development and testing much smoother
 
