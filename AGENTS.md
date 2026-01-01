@@ -25,6 +25,47 @@
   - **Never commit changes that promote test dependencies or weak dependencies to strong dependencies** - this is strictly forbidden. Test dependencies should remain in `[compat]` or `[extras]` sections, and weak dependencies should not be moved to `[deps]`
   - **Common issue**: Tools like Aqua.jl, JET.jl, etc. are often accidentally added to `Project.toml` during testing. However, when using `Pkg.test()`, these test tools are automatically available as test dependencies and should **not** be added to `[deps]`. If they appear in `Project.toml` after testing, remove them manually.
 
+- **Handling Aqua and JET in CI**: For packages that use Aqua.jl and JET.jl for code quality checks, follow these guidelines to avoid version compatibility issues:
+  - **Rationale**: Aqua and JET checks have strong Julia version dependencies. Debugging compatibility issues in CI environments is time-consuming, so it's better to run these checks only locally and on the latest Julia version in CI.
+  - **CI configuration**: Run tests on both LTS and latest ('1') Julia versions
+  - **Environment variable**: Set `SKIP_AQUA_JET` environment variable for non-latest versions (e.g., `SKIP_AQUA_JET: ${{ matrix.version != '1' && 'true' || '' }}` in GitHub Actions)
+  - **Test script**: In `test/runtests.jl`, use conditional logic to dynamically install and run Aqua/JET tests:
+    ```julia
+    # Run Aqua and JET tests when not explicitly skipped
+    if !haskey(ENV, "SKIP_AQUA_JET")
+        using Pkg
+        Pkg.add("Aqua")
+        Pkg.add("JET")
+        include("test_with_aqua.jl")
+        include("test_with_jet.jl")
+    end
+    ```
+  - **Project.toml**: Do **not** add Aqua or JET to `[deps]` or `[targets].test`. Keep them in `[extras]` if needed for documentation, but they should be installed dynamically in the test script when needed.
+  - This approach ensures that Aqua and JET are only installed and run on compatible Julia versions, avoiding dependency resolution issues in CI.
+
+- **CI.yml rollup job verification**: When working on a package, verify that `.github/workflows/CI.yml` includes a `rollup` job that aggregates test and docs job results. The rollup job should:
+  - Have `needs: [test, docs]` (or appropriate job names)
+  - Use `if: always()` to run regardless of previous job results
+  - Check for both `failure` and `cancelled` statuses: `contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')`
+  - If the rollup job is missing or incorrectly configured, propose updating the CI.yml to match the template in `T4ATemplate.jl/template/CI.yml`
+
+- **Branch protection and auto merge verification**: Use `gh` command to verify that branch protection rules are properly configured and auto merge is enabled:
+  ```bash
+  # Check if auto merge is enabled
+  gh api /repos/OWNER/REPO --jq '.allow_auto_merge'
+  
+  # Check branch protection rules
+  gh api /repos/OWNER/REPO/branches/main/protection --jq '{required_status_checks, allow_auto_merge: .required_status_checks.checks[0].context}'
+  ```
+  If auto merge is not enabled or branch protection is missing the rollup job check, propose enabling auto merge and updating branch protection rules:
+  ```bash
+  # Enable auto merge
+  gh api --method PATCH /repos/OWNER/REPO -f allow_auto_merge=true
+  
+  # Set branch protection with CI check requirement
+  gh api --method PUT /repos/OWNER/REPO/branches/main/protection -f required_status_checks='{"strict": true, "contexts": ["CI"]}' -f enforce_admins=false
+  ```
+
 - Some libraries use ReTestItems as their test framework (e.g., Quantics.jl, QuanticsGrids.jl, TreeTCI.jl, SimpleTensorTrains.jl). However, ReTestItems has compatibility issues with libraries that use Distributed for parallel computation, so those libraries use the standard Test.jl framework instead
 
 - **For ReTestItems packages, you can run individual test files**: ReTestItems supports running specific test files by passing file paths to `runtests()`. This is useful for debugging specific tests without running the entire test suite. Examples:
@@ -71,12 +112,26 @@
   - No need to add/remove `[sources]` entries during development workflows
   - Makes cross-package development and testing much smoother
 
+- **Using `[sources]` in `docs/Project.toml`**: For documentation builds, it is recommended to add a `[sources]` entry in `docs/Project.toml` pointing to the parent directory. This ensures that the documentation uses the local development version of the package rather than a registered version.
+  ```toml
+  [sources]
+  PackageName = {path = ".."}
+  ```
+  **Benefits**:
+  - Documentation builds use the latest local changes automatically
+  - No need to register a new version just to test documentation changes
+  - When the local path doesn't exist (e.g., in CI or user environments), Julia falls back to the registered version from the registry
+
 - **Updating multiple interdependent Julia packages**: When you need to update many Julia libraries that depend on each other (e.g., after bumping an upstream package version), it is best to update and verify everything locally before pushing to remote.
-  (a) Ensure `[sources]` entries in each package's Project.toml point to local paths (should already be present if following the recommendation above).
+  (a) Ensure `[sources]` entries in each package's Project.toml point to local paths (should be removed when committing to remote).
   (b) Update all packages in dependency order. Commit changes to local working branches but do not push yet. Include version bumps in these commits.
   (c) Verify that all packages pass tests and documentation builds locally.
-  (d) Starting from the most upstream package, push the branch, create a PR, and merge after CI passes. After each merge, register the new version to T4ARegistry using T4ARegistrator.jl. Then proceed to the next downstream package.
+  (d) Starting from the most upstream package, update its version number in Project.toml and those of its downstream packages, push the branch (do not have to rerun tests), create a PR, and merge after CI passes. After each merge, register the new version to T4ARegistry using T4ARegistrator.jl. Then proceed to the next downstream package.
   
   **If a problem occurs during step (d)**: If any package fails CI or encounters issues during this phase, go back to step (a) for that package and all its downstream dependencies. Fix the issue locally and verify all affected packages pass tests before attempting to push again. Always strive to maintain local consistency before pushing to remote.
   
   **Note**: Do not commit Manifest.toml files. They are auto-generated and will be resolved correctly by CI and other environments based on Project.toml.
+
+---
+
+**Note for maintainers**: If this file (`AGENTS.md`) is updated and differs from `T4ATemplate.jl/template/AGENTS.md`, please copy the changes to the template file so that new packages generated with T4ATemplate.jl will include the updated guidelines.
