@@ -41,24 +41,21 @@ Each directory is an independent Julia package with its own `Project.toml`, `src
 
 ### Using `[sources]` for Local Development
 
-For T4A packages that depend on other T4A packages, it is **strongly recommended** to add a `[sources]` section in Project.toml pointing to local paths:
+For T4A packages that depend on other T4A packages, add a `[sources]` section in Project.toml pointing to local paths during development:
 
 ```toml
 [sources]
 T4ATensorTrain = {path = "../T4ATensorTrain.jl"}
-TensorCrossInterpolation = {path = "../TensorCrossInterpolation.jl"}
+T4AMatrixCI = {path = "../T4AMatrixCI.jl"}
 ```
 
-**Benefits**:
-- When local paths exist (e.g., in the umbrella repository), Julia uses the local versions automatically
-- No need to add/remove `[sources]` entries during development workflows
-- Makes cross-package development and testing much smoother
+**Important**: `[sources]` entries are for local development only. **Always remove `[sources]` from Project.toml before committing.**
 
 ### Updating Multiple Interdependent Packages
 
 When you need to update many Julia packages that depend on each other (for example, after bumping an upstream package version), it is best to update and verify everything locally before pushing changes upstream.
 
-(a) Ensure `[sources]` entries in each package's `Project.toml` point to local paths (these should not be committed when pushing to remote).
+(a) Add `[sources]` entries in each package's `Project.toml` pointing to local paths for development.
 
 (b) Update all packages in dependency order. Commit changes to local working branches but do not push yet. Include version bumps in these commits.
 
@@ -132,12 +129,7 @@ The template generates a package with:
    ```
 
 3. **Add to JuliaUmbrella** (if using umbrella repository):
-   ```bash
-   cd /path/to/JuliaUmbrella
-   git submodule add git@github.com:tensor4all/MyPkg.jl.git
-   git commit -m "Add MyPkg.jl as submodule"
-   git push
-   ```
+   Add the repository name to `git_clone_all.sh` and re-run the script.
 
 4. **Enable GitHub Pages** for documentation (Settings → Pages)
 

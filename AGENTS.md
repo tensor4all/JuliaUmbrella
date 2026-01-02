@@ -10,15 +10,60 @@
 
 - When working on a git repository, navigate into its directory and work as if it were a standalone package. Be aware of dependencies between packages
 
-- **When running tests, always redirect stdout and stderr to files and use tee for real-time output**: **Always save test output to files** - this is critical because test output contains detailed error messages, stack traces, and diagnostic information that you'll need for debugging. Without saving to files, you would need to run tests twice: once to see what happened, and again to capture the details. Using `tee` allows you to see progress in real-time while simultaneously saving everything to files. Example:
+- **Running tests**: T4A packages use two test frameworks depending on their needs:
+  - **ReTestItems**: For packages that don't use Distributed (e.g., T4AQuantics.jl, QuanticsGrids.jl)
+  - **Standard Test.jl**: For packages that use Distributed for parallel computation (e.g., T4APartitionedTT.jl, T4ATCIAlgorithms.jl)
+
+  **Full test suite** - Use `Pkg.test()` for both frameworks:
   ```bash
-  julia --project=. test/runtests.jl 2>&1 | tee test_output.log
+  julia --project=. -e "using Pkg; Pkg.test()" 2>&1 | tee test_output.log
   ```
-  Or to separate stdout and stderr while still seeing both in real-time:
+  This automatically sets up test dependencies without modifying `Project.toml`.
+
+  **Running specific tests for debugging**:
+
+  For **ReTestItems packages** (check if `test/runtests.jl` uses `ReTestItems`):
   ```bash
-  julia --project=. test/runtests.jl > >(tee test_stdout.log) 2> >(tee test_stderr.log >&2)
+  # Requires ReTestItems to be installed first: Pkg.add("ReTestItems")
+
+  # Run specific file
+  julia --project=. -e "using ReTestItems; runtests(\"test/specific_tests.jl\")" 2>&1 | tee test_specific.log
+
+  # Filter by test name (regex supported)
+  julia --project=. -e "using ReTestItems; runtests(\"test/\"; name=r\"^pattern\")" 2>&1 | tee test_specific.log
+
+  # Filter by tag (if tests have tags defined)
+  julia --project=. -e "using ReTestItems; runtests(\"test/\"; tags=:tagname)" 2>&1 | tee test_specific.log
+
+  # Combine name and tags filters
+  julia --project=. -e "using ReTestItems; runtests(\"test/\"; tags=:regression, name=r\"^issue\")" 2>&1 | tee test_specific.log
   ```
-  **Important**: Always save test output to files. The saved logs are essential for debugging failures, understanding test behavior, and reviewing detailed error messages without re-running tests.
+
+  For **standard Test.jl packages** (check if `test/runtests.jl` uses `include`):
+  ```bash
+  # Include the specific test file directly
+  julia --project=. -e "
+    using PkgName  # Replace with actual package name
+    using Test
+    include(\"test/_util.jl\")  # If test utilities exist
+    include(\"test/specific_tests.jl\")
+  " 2>&1 | tee test_specific.log
+  ```
+
+  **Note**: Running specific tests directly requires test dependencies (ReTestItems, etc.) to be installed. If you install them in the project environment, `Project.toml` and `Manifest.toml` will be modified.
+
+  **After debugging, revert these changes**:
+  ```bash
+  # Check what was added
+  git diff Project.toml
+
+  # If ONLY test deps were added (no other changes), safe to checkout
+  git checkout Project.toml Manifest.toml
+
+  # If you have other uncommitted changes, manually remove the added lines
+  ```
+
+  **Always save test output to files** using `tee` for debugging.
 
 - **Handling Project.toml changes during testing**: If `Pkg.add` or similar operations during testing modify `Project.toml`, **always review the changes carefully** before committing:
   - First, use `git diff Project.toml` to see exactly what was added or changed
@@ -69,24 +114,6 @@
   gh api --method PUT /repos/OWNER/REPO/branches/main/protection -f required_status_checks='{"strict": true, "contexts": ["rollup"]}' -f enforce_admins=false
   ```
 
-- Some libraries use ReTestItems as their test framework (e.g., Quantics.jl, QuanticsGrids.jl, TreeTCI.jl, SimpleTensorTrains.jl). However, ReTestItems has compatibility issues with libraries that use Distributed for parallel computation, so those libraries use the standard Test.jl framework instead
-
-- **For ReTestItems packages, you can run individual test files**: ReTestItems supports running specific test files by passing file paths to `runtests()`. This is useful for debugging specific tests without running the entire test suite. Examples:
-  ```bash
-  # Run a specific test file
-  julia --project=. -e "using ReTestItems; runtests(\"test/binaryop_tests.jl\")"
-  
-  # Run multiple specific test files
-  julia --project=. -e "using ReTestItems; runtests(\"test/binaryop_tests.jl\", \"test/mul_tests.jl\")"
-  
-  # Run with specific options (e.g., single worker for debugging)
-  julia --project=. -e "using ReTestItems; runtests(\"test/binaryop_tests.jl\"; nworkers=1)"
-  ```
-  Note: The file paths should be relative to the package root directory. Always redirect output to files when debugging:
-  ```bash
-  julia --project=. -e "using ReTestItems; runtests(\"test/binaryop_tests.jl\")" 2>&1 | tee test_binaryop.log
-  ```
-
 - If a package has a `.JuliaFormatter.toml` file, follow its formatting rules. Otherwise, follow standard Julia style guidelines
 
 - When making changes that affect multiple packages, consider the dependency graph and test affected packages accordingly
@@ -103,26 +130,13 @@
 
 - Some libraries are already registered in the official Julia registry. To register a new version, comment `@JuliaRegistrator register` in the library's issue, and the bot will create a PR to the official registry
 
-- **Using `[sources]` for local development (strongly recommended for T4A packages)**: For T4A packages that depend on other T4A packages, it is strongly recommended to add a `[sources]` section in Project.toml pointing to local paths. This enables seamless local development across interdependent packages.
+- **Using `[sources]` for local development**: For T4A packages that depend on other T4A packages, add a `[sources]` section in Project.toml pointing to local paths during development. This enables seamless local development across interdependent packages.
   ```toml
   [sources]
   T4ATensorTrain = {path = "../T4ATensorTrain.jl"}
-  TensorCrossInterpolation = {path = "../TensorCrossInterpolation.jl"}
+  T4AMatrixCI = {path = "../T4AMatrixCI.jl"}
   ```
-  **Benefits**:
-  - When local paths exist (e.g., in the umbrella repository), Julia uses the local versions automatically
-  - No need to add/remove `[sources]` entries during development workflows
-  - Makes cross-package development and testing much smoother
-
-- **Using `[sources]` in `docs/Project.toml`**: For documentation builds, it is recommended to add a `[sources]` entry in `docs/Project.toml` pointing to the parent directory. This ensures that the documentation uses the local development version of the package rather than a registered version.
-  ```toml
-  [sources]
-  PackageName = {path = ".."}
-  ```
-  **Benefits**:
-  - Documentation builds use the latest local changes automatically
-  - No need to register a new version just to test documentation changes
-  - Documentation builds should use the local checkout (for example, `path = ".."`), so avoid committing docs setups that point to non-existent local paths
+  **Important**: `[sources]` entries are for local development only. **Always remove `[sources]` from Project.toml before committing.** The `[sources]` section should never be pushed to the repository.
 
 ---
 
