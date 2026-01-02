@@ -109,8 +109,8 @@
   # Enable auto merge
   gh api --method PATCH /repos/OWNER/REPO -f allow_auto_merge=true
   
-  # Set branch protection with CI check requirement
-  gh api --method PUT /repos/OWNER/REPO/branches/main/protection -f required_status_checks='{"strict": true, "contexts": ["CI"]}' -f enforce_admins=false
+  # Set branch protection with rollup check requirement
+  gh api --method PUT /repos/OWNER/REPO/branches/main/protection -f required_status_checks='{"strict": true, "contexts": ["rollup"]}' -f enforce_admins=false
   ```
 
 - If a package has a `.JuliaFormatter.toml` file, follow its formatting rules. Otherwise, follow standard Julia style guidelines
