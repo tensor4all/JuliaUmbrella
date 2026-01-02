@@ -49,6 +49,7 @@
   - Have `needs: [test, docs]` (or appropriate job names)
   - Use `if: always()` to run regardless of previous job results
   - Check for both `failure` and `cancelled` statuses: `contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')`
+  - **Do not include a `name:` field** - the job ID (`rollup`) should be used as the display name
   - If the rollup job is missing or incorrectly configured, propose updating the CI.yml to match the template in `T4ATemplate.jl/template/CI.yml`
 
 - **Branch protection and auto merge verification**: Use `gh` command to verify that branch protection rules are properly configured and auto merge is enabled:
