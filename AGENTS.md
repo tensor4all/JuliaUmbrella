@@ -64,8 +64,8 @@
   # Enable auto merge
   gh api --method PATCH /repos/OWNER/REPO -f allow_auto_merge=true
   
-  # Set branch protection with CI check requirement
-  gh api --method PUT /repos/OWNER/REPO/branches/main/protection -f required_status_checks='{"strict": true, "contexts": ["CI"]}' -f enforce_admins=false
+  # Set branch protection with rollup check requirement
+  gh api --method PUT /repos/OWNER/REPO/branches/main/protection -f required_status_checks='{"strict": true, "contexts": ["rollup"]}' -f enforce_admins=false
   ```
 
 - Some libraries use ReTestItems as their test framework (e.g., Quantics.jl, QuanticsGrids.jl, TreeTCI.jl, SimpleTensorTrains.jl). However, ReTestItems has compatibility issues with libraries that use Distributed for parallel computation, so those libraries use the standard Test.jl framework instead
