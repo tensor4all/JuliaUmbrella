@@ -120,9 +120,13 @@
 
 - The `gh` (GitHub CLI) command is available locally and can be used for GitHub-related operations. If `gh` is not available, suggest the user to install it
 
+- **Before creating a PR**: Read the README.md file and check if any information has become outdated due to the implementation changes. If outdated information is found, propose updates to keep the documentation accurate.
+
 - **Never push directly to main branch**: All changes must be made through pull requests. Create a branch, commit changes, push the branch, and create a PR. Wait for CI workflows to pass before merging.
 
 - **Never use force push to main branch**: Force pushing (including `--force-with-lease`) to main is prohibited. If you need to rewrite history, do it on a feature branch and create a PR.
+
+- **AI-generated analysis reports**: Analysis reports (*.md) created by AI should not be added to git (`git add`) unless explicitly instructed by the user.
 
 - All libraries are under the [tensor4all GitHub organization](https://github.com/tensor4all)
 
